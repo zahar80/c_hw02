@@ -204,7 +204,7 @@ int main(int argc, char** argv) {
         }
 
         for (int i = 0; i < files_number; i++) {
-            free(cfhp_array[i]);
+            free_cfh(cfhp_array[i]);
         }
         free_eocdr(eocdr_p);
     } else {
