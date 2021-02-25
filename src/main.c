@@ -8,6 +8,8 @@
 #define EOCDR_SIGNATURE 0x06054b50  /* "PK\5\6" little-endian. */
 #define CFH_SIGNATURE 0x02014b50  /* "PK\1\2" little-endian. */
 
+#pragma pack(push,1)
+
 /* End of Central Directory Record. */
 typedef struct {
     uint16_t disk_nbr;        /* Number of this disk. */
@@ -43,6 +45,8 @@ typedef struct {
     uint8_t *comment;        /* File comment. */
 } CFH;
 
+#pragma pack(pop)
+
 void exit_program(const char* error) {
     fprintf(stderr, "%s\n", error);
     exit(1);
@@ -50,22 +54,14 @@ void exit_program(const char* error) {
 
 uint32_t read32(FILE* fp) {
     uint32_t out;
-    uint8_t* c = (uint8_t *)&out;
-
-    for (int i = 0; i < 4; i++) {
-        *(c + i) = fgetc(fp);
-    }
+    fread(&out, sizeof out, 1, fp);
 
     return out;
 }
 
 uint16_t read16(FILE* fp) {
     uint16_t out;
-    uint8_t* c = (uint8_t *)&out;
-
-    for (int i = 0; i < 2; i++) {
-        *(c + i) = fgetc(fp);
-    }
+    fread(&out, sizeof out, 1, fp);
 
     return out;
 }
@@ -73,9 +69,7 @@ uint16_t read16(FILE* fp) {
 uint8_t* get_string(FILE* fp, size_t length) {
     uint8_t* str = malloc(length + 1);
 
-    for (size_t i = 0; i < length; i++) {
-        *(str + i) = fgetc(fp);
-    }
+    fread(str, length, 1, fp);
     str[length] = '\0';
 
     return str;
@@ -108,18 +102,8 @@ bool is_zip_found(FILE* fp) {
 EOCDR* get_eocdr(FILE* fp) {
     EOCDR* eocdr = malloc(sizeof(EOCDR));
 
-    eocdr->disk_nbr = read16(fp);
-    eocdr->cd_start_disk = read16(fp);
-    eocdr->disk_cd_entries = read16(fp);
-    eocdr->cd_entries = read16(fp);
-    eocdr->cd_size = read32(fp);
-    eocdr->cd_offset = read32(fp);
-    eocdr->comment_len = read16(fp);
-    eocdr->comment = NULL;
-
-    if (eocdr->comment_len) {
-        eocdr->comment = get_string(fp, eocdr->comment_len);
-    }
+    fread(eocdr, sizeof(EOCDR) - sizeof(uint8_t *), 1, fp);
+    eocdr->comment = eocdr->comment_len ? get_string(fp, eocdr->comment_len) : NULL;
 
     return eocdr;
 }
@@ -133,37 +117,10 @@ CFH* get_cfh(FILE* fp) {
     fseek(fp, sizeof CFH_SIGNATURE, SEEK_CUR);
     CFH* cfh = malloc(sizeof(CFH));
 
-    cfh->made_by_ver = read16(fp);
-    cfh->extract_ver = read16(fp);
-    cfh->gp_flag = read16(fp);
-    cfh->method = read16(fp);
-    cfh->mod_time = read16(fp);
-    cfh->mod_date = read16(fp);
-    cfh->crc32 = read32(fp);
-    cfh->comp_size = read32(fp);
-    cfh->uncomp_size = read32(fp);
-    cfh->name_len = read16(fp);
-    cfh->extra_len = read16(fp);
-    cfh->comment_len = read16(fp);
-    cfh->disk_nbr_start = read16(fp);
-    cfh->int_attrs = read16(fp);
-    cfh->ext_attrs = read32(fp);
-    cfh->lfh_offset = read32(fp);
-    cfh->name = NULL;
-    cfh->extra = NULL;
-    cfh->comment = NULL;
-
-    if (cfh->name_len) {
-        cfh->name = get_string(fp, cfh->name_len);
-    }
-
-    if (cfh->extra_len) {
-        cfh->extra = get_string(fp, cfh->extra_len);
-    }
-
-    if (cfh->comment_len) {
-        cfh->comment = get_string(fp, cfh->comment_len);
-    }
+    fread(cfh, sizeof(CFH) - sizeof(uint8_t *) * 3, 1, fp);
+    cfh->name = cfh->name_len ? get_string(fp, cfh->name_len) : NULL;
+    cfh->extra = cfh->extra_len ? get_string(fp, cfh->extra_len) : NULL;
+    cfh->comment = cfh->comment_len ? get_string(fp, cfh->comment_len) : NULL;
 
     return cfh;
 }
