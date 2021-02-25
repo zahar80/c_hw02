@@ -23,3 +23,6 @@ mkdir:
 
 copy:
 	$(COPY) $(SRCDIR)/non-zipjpeg.jpg $(SRCDIR)/zipjpeg.jpg $(DISTDIR)
+
+check-mem-leaks:
+	$(CD) $(DISTDIR) && valgrind --leak-check=yes ./$(EXECFILE) zipjpeg.jpg
