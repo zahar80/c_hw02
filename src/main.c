@@ -47,26 +47,19 @@ typedef struct {
 
 #pragma pack(pop)
 
-void exit_program(const char* error) {
+static void exit_program(const char* error) {
     fprintf(stderr, "%s\n", error);
     exit(1);
 }
 
-uint32_t read32(FILE* fp) {
+static uint32_t read32(FILE* fp) {
     uint32_t out;
     fread(&out, sizeof out, 1, fp);
 
     return out;
 }
 
-uint16_t read16(FILE* fp) {
-    uint16_t out;
-    fread(&out, sizeof out, 1, fp);
-
-    return out;
-}
-
-uint8_t* get_string(FILE* fp, size_t length) {
+static uint8_t* get_string(FILE* fp, size_t length) {
     uint8_t* str = malloc(length + 1);
 
     fread(str, length, 1, fp);
@@ -75,7 +68,7 @@ uint8_t* get_string(FILE* fp, size_t length) {
     return str;
 }
 
-bool is_zip_found(FILE* fp) {
+static bool is_zip_found(FILE* fp) {
     bool zip_found = false;
     
     fseek(fp, 0L, SEEK_END);
@@ -99,7 +92,7 @@ bool is_zip_found(FILE* fp) {
     return zip_found;
 }
 
-EOCDR* get_eocdr(FILE* fp) {
+static EOCDR* get_eocdr(FILE* fp) {
     EOCDR* eocdr = malloc(sizeof(EOCDR));
 
     fread(eocdr, sizeof(EOCDR) - sizeof(uint8_t *), 1, fp);
@@ -108,12 +101,12 @@ EOCDR* get_eocdr(FILE* fp) {
     return eocdr;
 }
 
-void free_eocdr(EOCDR* r) {
+static void free_eocdr(EOCDR* r) {
     free(r->comment);
     free(r);
 }
 
-CFH* get_cfh(FILE* fp) {
+static CFH* get_cfh(FILE* fp) {
     fseek(fp, sizeof CFH_SIGNATURE, SEEK_CUR);
     CFH* cfh = malloc(sizeof(CFH));
 
@@ -125,7 +118,7 @@ CFH* get_cfh(FILE* fp) {
     return cfh;
 }
 
-void free_cfh(CFH* cfh) {
+static void free_cfh(CFH* cfh) {
     free(cfh->name);
     free(cfh->extra);
     free(cfh->comment);
